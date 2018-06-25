@@ -24,12 +24,18 @@
 
         public Task Handle(IOrderPlaced message, IMessageHandlerContext context)
         {
+            Log.Info($"Order with Id {message.OrderId} placed. Validating...");
+
             var order = new Order(message.OrderId, message.TotalValue);
-            order.Status = OrderStatus.Pending;
+            order.Status = OrderStatus.Validating;
 
             orders.Save(order);
 
-            context.Send(new ChargeCreditCardRequest { CorrelationId = message.OrderId, Amount = message.TotalValue });
+            var validateCreditCardCharge =
+                new ValidateCreditCardCharge { Amount = message.TotalValue, CorrelationId = order.OrderId };
+
+            List<string> destinations = GetDestinationsFor(validateCreditCardCharge);
+            context.Route(validateCreditCardCharge, order.OrderId, destinations.ToArray());
 
             return Task.CompletedTask;
         }
