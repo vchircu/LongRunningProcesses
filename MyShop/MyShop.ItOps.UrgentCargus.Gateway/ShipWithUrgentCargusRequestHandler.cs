@@ -15,10 +15,8 @@
         {
             Log.Info($"Attempting to ship Order with Id {message.CorrelationId}");
 
-            context.Reply(
+            return context.Reply(
                 new ShipWithUrgentCargusResponse { CorrelationId = message.CorrelationId, PackageShipped = true });
-
-            return Task.CompletedTask;
         }
     }
 }

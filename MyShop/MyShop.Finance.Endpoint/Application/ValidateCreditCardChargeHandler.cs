@@ -23,7 +23,7 @@
             this.orders = orders;
         }
 
-        public Task Handle(ValidateCreditCardCharge message, IMessageHandlerContext context)
+        public async Task Handle(ValidateCreditCardCharge message, IMessageHandlerContext context)
         {
             var routingSlip = context.Extensions.Get<RoutingSlip>();
             var order = orders.GetById(message.CorrelationId);
@@ -36,12 +36,10 @@
             else
             {
                 order.Status = OrderStatus.Pending;
-                context.Send(new ChargeCreditCardRequest { CorrelationId = order.OrderId, Amount = order.TotalValue });
+                await context.Send(new ChargeCreditCardRequest { CorrelationId = order.OrderId, Amount = order.TotalValue });
             }
 
             orders.Save(order);
-
-            return Task.CompletedTask;
         }
 
         private static void LogResponse(IDictionary<string, string> routingSlipAttachments, Guid orderId)

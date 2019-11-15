@@ -11,9 +11,7 @@
     {
         public Task Handle(IOrderPlaced message, IMessageHandlerContext context)
         {
-            context.Publish<IOrderPacked>(m => { m.OrderId = message.OrderId; });
-
-            return Task.CompletedTask;
+            return context.Publish<IOrderPacked>(m => { m.OrderId = message.OrderId; });
         }
     }
 }

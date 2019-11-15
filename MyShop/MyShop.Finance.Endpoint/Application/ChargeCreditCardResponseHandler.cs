@@ -20,7 +20,7 @@
             this.orders = orders;
         }
 
-        public Task Handle(ChargeCreditCardResponse message, IMessageHandlerContext context)
+        public async Task Handle(ChargeCreditCardResponse message, IMessageHandlerContext context)
         {
             var order = orders.GetById(message.CorrelationId);
 
@@ -32,10 +32,8 @@
 
             if (order.Status == OrderStatus.Paid)
             {
-                context.Publish<IOrderCharged>(orderCharged => { orderCharged.OrderId = order.OrderId; });
+                await context.Publish<IOrderCharged>(orderCharged => { orderCharged.OrderId = order.OrderId; });
             }
-
-            return Task.CompletedTask;
         }
     }
 }

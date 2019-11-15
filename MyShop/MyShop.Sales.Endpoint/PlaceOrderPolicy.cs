@@ -22,9 +22,7 @@
 
             Log.Info($"Placing Order with Id {message.OrderId}");
 
-            RequestTimeout(context, TimeSpan.FromSeconds(1), new BuyersRemorseTimeout());
-
-            return Task.CompletedTask;
+            return RequestTimeout(context, TimeSpan.FromSeconds(1), new BuyersRemorseTimeout());
         }
 
         public Task Handle(CancelOrder message, IMessageHandlerContext context)
@@ -35,9 +33,9 @@
             return Task.CompletedTask;
         }
 
-        public Task Timeout(BuyersRemorseTimeout state, IMessageHandlerContext context)
+        public async Task Timeout(BuyersRemorseTimeout state, IMessageHandlerContext context)
         {
-            context.Publish<IOrderPlaced>(
+            await context.Publish<IOrderPlaced>(
                 o =>
                     {
                         o.OrderId = Data.OrderId;
@@ -45,8 +43,6 @@
                     });
 
             MarkAsComplete();
-
-            return Task.CompletedTask;
         }
 
         protected override void ConfigureHowToFindSaga(SagaPropertyMapper<PlaceOrderPolicyData> mapper)

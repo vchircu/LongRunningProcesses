@@ -28,7 +28,7 @@
 
             if (CanShip)
             {
-                ShipOrder(message.OrderId, context);
+                return ShipOrder(message.OrderId, context);
             }
 
             return Task.CompletedTask;
@@ -43,21 +43,21 @@
 
             if (CanShip)
             {
-                ShipOrder(message.OrderId, context);
+                return ShipOrder(message.OrderId, context);
             }
 
             return Task.CompletedTask;
         }
 
-        private void ShipOrder(Guid orderId, IMessageHandlerContext context)
+        private async Task ShipOrder(Guid orderId, IMessageHandlerContext context)
         {
             if (GlobalConfig.IsHighVolumeOrder)
             {
-                context.SendLocal(new ShipHighVolumeOrder { OrderId = orderId });
+                await context.SendLocal(new ShipHighVolumeOrder { OrderId = orderId });
             }
             else
             {
-                context.SendLocal(new ShipOrder { OrderId = orderId });
+                await context.SendLocal(new ShipOrder { OrderId = orderId });
             }
 
             MarkAsComplete();

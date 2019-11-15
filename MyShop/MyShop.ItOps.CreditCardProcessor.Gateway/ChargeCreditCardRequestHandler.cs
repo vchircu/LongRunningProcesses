@@ -14,9 +14,7 @@
         public Task Handle(ChargeCreditCardRequest message, IMessageHandlerContext context)
         {
             Log.Info($"Charging for Order with Id { message.CorrelationId }");
-            context.Reply(new ChargeCreditCardResponse { CorrelationId = message.CorrelationId, CardHasBeenCharged = true });
-
-            return Task.CompletedTask;
+            return context.Reply(new ChargeCreditCardResponse { CorrelationId = message.CorrelationId, CardHasBeenCharged = true });
         }
     }
 }

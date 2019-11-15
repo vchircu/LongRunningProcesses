@@ -20,7 +20,7 @@
 
         private readonly TimeSpan shipmentSla = TimeSpan.FromSeconds(10);
 
-        public Task Handle(ShipOrder message, IMessageHandlerContext context)
+        public async Task Handle(ShipOrder message, IMessageHandlerContext context)
         {
             Log.Info($"Received ShipOrder command for Order with Id {message.OrderId}.");
             Log.Info($"Attempting to ship Order with Id {Data.OrderId} with FanCourier.");
@@ -28,24 +28,22 @@
             Data.OrderId = message.OrderId;
             Data.Status = ShippingStatus.ShippingWithFanCourier;
 
-            context.Send(new ShipWithFanCourierRequest { CorrelationId = Data.OrderId });
+            await context.Send(new ShipWithFanCourierRequest { CorrelationId = Data.OrderId });
 
-            RequestTimeout(context, shipmentSla, new DidNotReceiveAResponseFromFanCourierTimeout());
-
-            return Task.CompletedTask;
+            await RequestTimeout(context, shipmentSla, new DidNotReceiveAResponseFromFanCourierTimeout());
         }
 
-        public Task Handle(ShipWithFanCourierResponse message, IMessageHandlerContext context)
+        public async Task Handle(ShipWithFanCourierResponse message, IMessageHandlerContext context)
         {
             if (!message.PackageShipped)
             {
-                ShipWithUrgentCargus(context);
+                await ShipWithUrgentCargus(context);
             }
             else
             {
                 if (Data.Status == ShippingStatus.ShippingWithFanCourier)
                 {
-                    context.Publish<IOrderShipped>(m => { m.OrderId = Data.OrderId; });
+                    await context.Publish<IOrderShipped>(m => { m.OrderId = Data.OrderId; });
                     MarkAsComplete();
 
                     Log.Info($"Done shipping Order with Id {Data.OrderId}.");
@@ -57,15 +55,13 @@
                         + $"Cancel Fan Courier shipping command for Order with Id {Data.OrderId} has already been sent.");
                 }
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Handle(ShipWithUrgentCargusResponse message, IMessageHandlerContext context)
+        public async Task Handle(ShipWithUrgentCargusResponse message, IMessageHandlerContext context)
         {
             if (message.PackageShipped)
             {
-                context.Publish<IOrderShipped>(m => { m.OrderId = Data.OrderId; });
+                await context.Publish<IOrderShipped>(m => { m.OrderId = Data.OrderId; });
                 MarkAsComplete();
 
                 Log.Info($"Done shipping Order with Id {Data.OrderId}.");
@@ -74,19 +70,15 @@
             {
                 throw new CannotShipOrderException(Data.OrderId);
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Timeout(DidNotReceiveAResponseFromFanCourierTimeout state, IMessageHandlerContext context)
+        public async Task Timeout(DidNotReceiveAResponseFromFanCourierTimeout state, IMessageHandlerContext context)
         {
             if (Data.Status == ShippingStatus.ShippingWithFanCourier)
             {
-                context.Send(new CancelFanCourierShipping { CorrelationId = Data.OrderId });
-                ShipWithUrgentCargus(context);
+                await context.Send(new CancelFanCourierShipping { CorrelationId = Data.OrderId });
+                await ShipWithUrgentCargus(context);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task Timeout(DidNotReceiveAResponseFromUrgentCargusTimeout state, IMessageHandlerContext context)
@@ -99,14 +91,14 @@
             mapper.ConfigureMapping<ShipOrder>(message => message.OrderId).ToSaga(sagaData => sagaData.OrderId);
         }
 
-        private void ShipWithUrgentCargus(IMessageHandlerContext context)
+        private async Task ShipWithUrgentCargus(IMessageHandlerContext context)
         {
             Log.Info($"Attempting to ship Order with Id {Data.OrderId} with UrgentCargus.");
 
             Data.Status = ShippingStatus.ShippingWithUrgentCargus;
-            context.Send(new ShipWithUrgentCargusRequest { CorrelationId = Data.OrderId });
+            await context.Send(new ShipWithUrgentCargusRequest { CorrelationId = Data.OrderId });
 
-            RequestTimeout(context, shipmentSla, new DidNotReceiveAResponseFromUrgentCargusTimeout());
+            await RequestTimeout(context, shipmentSla, new DidNotReceiveAResponseFromUrgentCargusTimeout());
         }
     }
 

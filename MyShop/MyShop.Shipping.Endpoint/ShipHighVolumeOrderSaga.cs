@@ -17,7 +17,7 @@
     {
         static readonly ILog Log = LogManager.GetLogger(typeof(ShipHighVolumeOrderSaga));
 
-        public Task Handle(ShipHighVolumeOrder message, IMessageHandlerContext context)
+        public async Task Handle(ShipHighVolumeOrder message, IMessageHandlerContext context)
         {
             Log.Info($"Received ShipHighVolumeOrder command for Order with Id {message.OrderId}.");
 
@@ -31,25 +31,23 @@
                 var correlationId = Guid.NewGuid();
                 const bool IsSent = false;
                 Data.BatchStatuses.Add(correlationId, IsSent);
-                context.Send(new ShipWithFanCourierRequest { CorrelationId = correlationId });
+                await context.Send(new ShipWithFanCourierRequest { CorrelationId = correlationId });
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Handle(ShipWithFanCourierResponse message, IMessageHandlerContext context)
+        public async Task Handle(ShipWithFanCourierResponse message, IMessageHandlerContext context)
         {
             if (!message.PackageShipped)
             {
                 if (!Data.CouldNotShip)
                 {
                     Log.Info($"Couldn't ship Batch {message.CorrelationId} from Order {Data.OrderId}. Compensating...");
-                    Compensate(context);
+                    await Compensate(context);
 
                     Data.CouldNotShip = true;
                 }
 
-                return Task.CompletedTask;
+                return;
             }
 
             Log.Info($"Done shipping Batch {message.CorrelationId} from Order {Data.OrderId}.");
@@ -58,11 +56,9 @@
             if (Data.BatchStatuses.Values.All(v => v))
             {
                 Log.Info($"Done shipping Order with Id {Data.OrderId}.");
-                context.Publish<IOrderShipped>(m => { m.OrderId = Data.OrderId; });
+                await context.Publish<IOrderShipped>(m => { m.OrderId = Data.OrderId; });
                 MarkAsComplete();
             }
-
-            return Task.CompletedTask;
         }
 
         protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ShipHighVolumeOrderSagaData> mapper)
@@ -71,11 +67,11 @@
                 .ToSaga(sagaData => sagaData.OrderId);
         }
 
-        private void Compensate(IMessageHandlerContext context)
+        private async Task Compensate(IMessageHandlerContext context)
         {
             foreach (var batchId in Data.BatchStatuses.Keys)
             {
-                context.Send(new CancelFanCourierShipping { CorrelationId = batchId });
+                await context.Send(new CancelFanCourierShipping { CorrelationId = batchId });
             }
         }
     }

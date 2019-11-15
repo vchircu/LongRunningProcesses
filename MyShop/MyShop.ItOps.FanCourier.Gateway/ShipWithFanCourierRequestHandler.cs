@@ -19,14 +19,12 @@
         {
             Log.Info($"Attempting to ship Order with Id {message.CorrelationId}");
 
-            context.Reply(
+            return context.Reply(
                 new ShipWithFanCourierResponse
                     {
                         CorrelationId = message.CorrelationId,
                         PackageShipped = IsPackageShipped()
                     });
-
-            return Task.CompletedTask;
         }
 
         private static bool IsPackageShipped()
