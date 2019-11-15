@@ -38,7 +38,7 @@
       <HintPath>..\packages\FluentAssertions.5.3.2\lib\net45\FluentAssertions.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NServiceBus.7.0.1\lib\net452\NServiceBus.Core.dll</HintPath>
+      <HintPath>..\packages\NServiceBus.7.2.0\lib\net452\NServiceBus.Core.dll</HintPath>
     </Reference>
     <Reference Include="NServiceBus.Testing, Version=7.0.0.0, Culture=neutral, PublicKeyToken=9fc386479f8a226c, processorArchitecture=MSIL">
       <HintPath>..\packages\NServiceBus.Testing.7.0.0\lib\net452\NServiceBus.Testing.dll</HintPath>
@@ -91,6 +91,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Analyzer Include="..\packages\NServiceBus.7.2.0\analyzers\dotnet\cs\NServiceBus.Core.Analyzer.dll" />
     <Analyzer Include="..\packages\xunit.analyzers.0.9.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
