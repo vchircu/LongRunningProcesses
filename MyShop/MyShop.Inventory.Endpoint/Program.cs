@@ -18,8 +18,14 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<LearningPersistence>();
-            endpointConfiguration.UseTransport<LearningTransport>();
+            endpointConfiguration.UsePersistence<InMemoryPersistence>();
+            var transport = endpointConfiguration.UseTransport<MsmqTransport>();
+            var routing = transport.Routing();
+            routing.RegisterPublisher(typeof(Sales.Messages.IOrderPlaced), "Sales.Endpoint");
+
+            endpointConfiguration.SendFailedMessagesTo("error");
+            endpointConfiguration.AuditProcessedMessagesTo("audit");
+            endpointConfiguration.EnableInstallers();
 
             var endpoint = await Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
 

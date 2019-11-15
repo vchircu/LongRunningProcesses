@@ -20,12 +20,20 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<LearningPersistence>();
-            var transport = endpointConfiguration.UseTransport<LearningTransport>();
+            endpointConfiguration.UsePersistence<InMemoryPersistence>();
+            var transport = endpointConfiguration.UseTransport<MsmqTransport>();
+           
+            endpointConfiguration.SendFailedMessagesTo("error");
+            endpointConfiguration.AuditProcessedMessagesTo("audit");
+            endpointConfiguration.EnableInstallers();
+
             var routing = transport.Routing();
             routing.RouteToEndpoint(typeof(ShipWithFanCourierRequest), "ItOps.FanCourier.Gateway");
             routing.RouteToEndpoint(typeof(CancelFanCourierShipping), "ItOps.FanCourier.Gateway");
             routing.RouteToEndpoint(typeof(ShipWithUrgentCargusRequest), "ItOps.UrgentCargus.Gateway");
+
+            routing.RegisterPublisher(typeof(Finance.Messages.IOrderCharged), "Finance.Endpoint");
+            routing.RegisterPublisher(typeof(Inventory.Messages.IOrderPacked), "Inventory.Endpoint");
 
             var recoverability = endpointConfiguration.Recoverability();
             recoverability.AddUnrecoverableException<CannotShipOrderException>();

@@ -22,11 +22,15 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<LearningPersistence>();
-            TransportExtensions<LearningTransport> transport = endpointConfiguration.UseTransport<LearningTransport>();
-            RoutingSettings<LearningTransport> routing = transport.Routing();
+            endpointConfiguration.UsePersistence<InMemoryPersistence>();
+            TransportExtensions<MsmqTransport> transport = endpointConfiguration.UseTransport<MsmqTransport>();
+            RoutingSettings<MsmqTransport> routing = transport.Routing();
             routing.RouteToEndpoint(typeof(ChargeCreditCardRequest), "ItOps.CreditCardProcessor.Gateway");
+            routing.RegisterPublisher(typeof(Sales.Messages.IOrderPlaced), "Sales.Endpoint");
             endpointConfiguration.EnableFeature<RoutingSlips>();
+            endpointConfiguration.SendFailedMessagesTo("error");
+            endpointConfiguration.AuditProcessedMessagesTo("audit");
+            endpointConfiguration.EnableInstallers();
 
             endpointConfiguration.RegisterComponents(
                 configureComponents =>
