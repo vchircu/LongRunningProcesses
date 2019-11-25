@@ -1,11 +1,11 @@
-﻿namespace MyShop.ItOps.ExpensiveCreditCardValidator.Endpoint
+﻿using System;
+using System.Threading.Tasks;
+using MyShop.Library;
+using NServiceBus;
+using NServiceBus.MessageRouting.RoutingSlips;
+
+namespace MyShop.ItOps.ExpensiveCreditCardValidator.Endpoint
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using NServiceBus;
-    using NServiceBus.MessageRouting.RoutingSlips;
-
     internal class Program
     {
         internal static void Main()
@@ -19,14 +19,11 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<InMemoryPersistence>();
             endpointConfiguration.UseTransport<MsmqTransport>();
             endpointConfiguration.EnableFeature<RoutingSlips>();
-            endpointConfiguration.SendFailedMessagesTo("error");
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-            endpointConfiguration.EnableInstallers();
+            endpointConfiguration.ApplyDefaults();
 
-            var endpoint = await Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
+            var endpoint = await NServiceBus.Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
 
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();

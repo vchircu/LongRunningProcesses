@@ -1,10 +1,10 @@
-﻿namespace MyShop.ItOps.UrgentCargus.Gateway
+﻿using System;
+using System.Threading.Tasks;
+using MyShop.Library;
+using NServiceBus;
+
+namespace MyShop.ItOps.UrgentCargus.Gateway
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using NServiceBus;
-
     internal class Program
     {
         internal static void Main()
@@ -18,12 +18,9 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<InMemoryPersistence>();
             endpointConfiguration.UseTransport<MsmqTransport>();
 
-            endpointConfiguration.SendFailedMessagesTo("error");
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-            endpointConfiguration.EnableInstallers();
+            endpointConfiguration.ApplyDefaults();
 
             var endpoint = await Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
 

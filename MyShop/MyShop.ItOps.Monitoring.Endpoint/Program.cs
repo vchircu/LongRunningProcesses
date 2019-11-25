@@ -1,10 +1,14 @@
-﻿namespace MyShop.ItOps.Monitoring.Endpoint
+﻿using System;
+using System.Threading.Tasks;
+using MyShop.Finance.Messages;
+using MyShop.Inventory.Messages;
+using MyShop.Library;
+using MyShop.Sales.Messages;
+using MyShop.Shipping.Messages;
+using NServiceBus;
+
+namespace MyShop.ItOps.Monitoring.Endpoint
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using NServiceBus;
-
     internal class Program
     {
         internal static void Main()
@@ -18,19 +22,16 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<InMemoryPersistence>();
             var transport = endpointConfiguration.UseTransport<MsmqTransport>();
             var routing = transport.Routing();
-            routing.RegisterPublisher(typeof(Sales.Messages.IOrderPlaced), "Sales.Endpoint");
-            routing.RegisterPublisher(typeof(Finance.Messages.IOrderCharged), "Finance.Endpoint");
-            routing.RegisterPublisher(typeof(Inventory.Messages.IOrderPacked), "Inventory.Endpoint");
-            routing.RegisterPublisher(typeof(Shipping.Messages.IOrderShipped), "Shipping.Endpoint");
+            routing.RegisterPublisher(typeof(IOrderPlaced), "Sales.Endpoint");
+            routing.RegisterPublisher(typeof(IOrderCharged), "Finance.Endpoint");
+            routing.RegisterPublisher(typeof(IOrderPacked), "Inventory.Endpoint");
+            routing.RegisterPublisher(typeof(IOrderShipped), "Shipping.Endpoint");
 
-            endpointConfiguration.SendFailedMessagesTo("error");
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-            endpointConfiguration.EnableInstallers();
+            endpointConfiguration.ApplyDefaults();
 
-            var endpoint = await Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
+            var endpoint = await NServiceBus.Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
 
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();

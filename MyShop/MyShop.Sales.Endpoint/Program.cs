@@ -1,12 +1,12 @@
-﻿namespace MyShop.Sales.Endpoint
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using MyShop.Library;
+using MyShop.Sales.Messages;
+using NServiceBus;
+
+namespace MyShop.Sales.Endpoint
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using MyShop.Sales.Messages;
-
-    using NServiceBus;
-
     internal class Program
     {
         internal static void Main()
@@ -20,14 +20,11 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<InMemoryPersistence>();
             endpointConfiguration.UseTransport<MsmqTransport>();
 
-            endpointConfiguration.SendFailedMessagesTo("error");
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-            endpointConfiguration.EnableInstallers();
+            endpointConfiguration.ApplyDefaults();
 
-            var endpoint = await Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
+            var endpoint = await NServiceBus.Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
 
             Console.WriteLine("1. Place an order with a value lower than 500");
             Console.WriteLine("2. Place an order with a value between 500 and 2000");
@@ -67,16 +64,17 @@
         {
             var orderId = Guid.NewGuid();
 
-            await endpoint.SendLocal(new PlaceOrder { OrderId = orderId, TotalValue = 900 });
+            await endpoint.SendLocal(new PlaceOrder {OrderId = orderId, TotalValue = 900});
 
-            await endpoint.SendLocal(new CancelOrder { OrderId = orderId });
+            Thread.Sleep(1000);
+            await endpoint.SendLocal(new CancelOrder {OrderId = orderId});
         }
 
         private static Task SendOrderWithValue(IEndpointInstance endpoint, decimal totalValue)
         {
             var orderId = Guid.NewGuid();
 
-            return endpoint.SendLocal(new PlaceOrder { OrderId = orderId, TotalValue = totalValue });
+            return endpoint.SendLocal(new PlaceOrder {OrderId = orderId, TotalValue = totalValue});
         }
     }
 }

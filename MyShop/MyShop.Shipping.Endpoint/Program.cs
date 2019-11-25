@@ -1,12 +1,13 @@
-﻿namespace MyShop.Shipping.Endpoint
+﻿using System;
+using System.Threading.Tasks;
+using MyShop.Finance.Messages;
+using MyShop.Inventory.Messages;
+using MyShop.ItOps.Messages;
+using MyShop.Library;
+using NServiceBus;
+
+namespace MyShop.Shipping.Endpoint
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using MyShop.ItOps.Messages;
-
-    using NServiceBus;
-
     internal class Program
     {
         internal static void Main()
@@ -20,24 +21,21 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<InMemoryPersistence>();
             var transport = endpointConfiguration.UseTransport<MsmqTransport>();
-           
-            endpointConfiguration.SendFailedMessagesTo("error");
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-            endpointConfiguration.EnableInstallers();
+
+            endpointConfiguration.ApplyDefaults();
 
             var routing = transport.Routing();
             routing.RouteToEndpoint(typeof(ShipWithFanCourierRequest), "ItOps.FanCourier.Gateway");
             routing.RouteToEndpoint(typeof(CancelFanCourierShipping), "ItOps.FanCourier.Gateway");
             routing.RouteToEndpoint(typeof(ShipWithUrgentCargusRequest), "ItOps.UrgentCargus.Gateway");
 
-            routing.RegisterPublisher(typeof(Finance.Messages.IOrderCharged), "Finance.Endpoint");
-            routing.RegisterPublisher(typeof(Inventory.Messages.IOrderPacked), "Inventory.Endpoint");
+            routing.RegisterPublisher(typeof(IOrderCharged), "Finance.Endpoint");
+            routing.RegisterPublisher(typeof(IOrderPacked), "Inventory.Endpoint");
 
             var recoverability = endpointConfiguration.Recoverability();
             recoverability.AddUnrecoverableException<CannotShipOrderException>();
-            var endpoint = await Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
+            var endpoint = await NServiceBus.Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
 
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();

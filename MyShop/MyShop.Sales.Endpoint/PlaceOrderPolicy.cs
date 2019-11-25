@@ -1,17 +1,15 @@
-﻿namespace MyShop.Sales.Endpoint
+﻿using System;
+using System.Threading.Tasks;
+using MyShop.Sales.Messages;
+using NServiceBus;
+using NServiceBus.Logging;
+
+namespace MyShop.Sales.Endpoint
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using MyShop.Sales.Messages;
-
-    using NServiceBus;
-    using NServiceBus.Logging;
-
     public class PlaceOrderPolicy : Saga<PlaceOrderPolicyData>,
-                                    IAmStartedByMessages<PlaceOrder>,
-                                    IHandleMessages<CancelOrder>,
-                                    IHandleTimeouts<BuyersRemorseTimeout>
+        IAmStartedByMessages<PlaceOrder>,
+        IHandleMessages<CancelOrder>,
+        IHandleTimeouts<BuyersRemorseTimeout>
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(PlaceOrderPolicy));
 
@@ -35,12 +33,14 @@
 
         public async Task Timeout(BuyersRemorseTimeout state, IMessageHandlerContext context)
         {
+            var publishOptions = new PublishOptions();
+            publishOptions.SetHeader("MyShop.Audit", "Place Order");
             await context.Publish<IOrderPlaced>(
                 o =>
-                    {
-                        o.OrderId = Data.OrderId;
-                        o.TotalValue = Data.TotalValue;
-                    });
+                {
+                    o.OrderId = Data.OrderId;
+                    o.TotalValue = Data.TotalValue;
+                }, publishOptions);
 
             MarkAsComplete();
         }

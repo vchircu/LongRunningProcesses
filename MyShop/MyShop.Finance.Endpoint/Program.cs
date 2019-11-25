@@ -1,4 +1,6 @@
-﻿namespace MyShop.Finance.Endpoint
+﻿using MyShop.Library;
+
+namespace MyShop.Finance.Endpoint
 {
     using System;
     using System.Threading.Tasks;
@@ -22,15 +24,13 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<InMemoryPersistence>();
             TransportExtensions<MsmqTransport> transport = endpointConfiguration.UseTransport<MsmqTransport>();
             RoutingSettings<MsmqTransport> routing = transport.Routing();
             routing.RouteToEndpoint(typeof(ChargeCreditCardRequest), "ItOps.CreditCardProcessor.Gateway");
             routing.RegisterPublisher(typeof(Sales.Messages.IOrderPlaced), "Sales.Endpoint");
             endpointConfiguration.EnableFeature<RoutingSlips>();
-            endpointConfiguration.SendFailedMessagesTo("error");
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-            endpointConfiguration.EnableInstallers();
+
+            endpointConfiguration.ApplyDefaults();
 
             endpointConfiguration.RegisterComponents(
                 configureComponents =>

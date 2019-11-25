@@ -85,6 +85,10 @@
       <Project>{1AAF8AC7-2D12-42F4-8CE5-153F25967CFB}</Project>
       <Name>MyShop.ItOps.Messages</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MyShop.Library\MyShop.Library.csproj">
+      <Project>{8870FD39-66A7-499A-926D-70F5CF536DFE}</Project>
+      <Name>MyShop.Library</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MyShop.Sales.Messages\MyShop.Sales.Messages.csproj">
       <Project>{1FABD3A7-CFCC-460C-B030-EB31752951FA}</Project>
       <Name>MyShop.Sales.Messages</Name>

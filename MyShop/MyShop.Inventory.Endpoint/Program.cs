@@ -1,13 +1,14 @@
-﻿namespace MyShop.Inventory.Endpoint
+﻿using System;
+using System.Threading.Tasks;
+using MyShop.Library;
+using MyShop.Sales.Messages;
+using NServiceBus;
+
+namespace MyShop.Inventory.Endpoint
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using NServiceBus;
-
     internal class Program
     {
-        internal  static void Main()
+        internal static void Main()
         {
             MainAsync().GetAwaiter().GetResult();
         }
@@ -18,16 +19,13 @@
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UsePersistence<InMemoryPersistence>();
             var transport = endpointConfiguration.UseTransport<MsmqTransport>();
             var routing = transport.Routing();
-            routing.RegisterPublisher(typeof(Sales.Messages.IOrderPlaced), "Sales.Endpoint");
+            routing.RegisterPublisher(typeof(IOrderPlaced), "Sales.Endpoint");
 
-            endpointConfiguration.SendFailedMessagesTo("error");
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-            endpointConfiguration.EnableInstallers();
+            endpointConfiguration.ApplyDefaults();
 
-            var endpoint = await Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
+            var endpoint = await NServiceBus.Endpoint.Start(endpointConfiguration).ConfigureAwait(false);
 
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();
