@@ -20,7 +20,9 @@ namespace MyShop.Sales.Endpoint
             Console.Title = EndpointName;
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
 
-            endpointConfiguration.UseTransport<MsmqTransport>();
+            TransportExtensions<MsmqTransport> transport = endpointConfiguration.UseTransport<MsmqTransport>();
+            RoutingSettings<MsmqTransport> routing = transport.Routing();
+            routing.RouteToEndpoint(typeof(PlaceOrder), EndpointName);
 
             endpointConfiguration.ApplyDefaults();
 
@@ -64,9 +66,10 @@ namespace MyShop.Sales.Endpoint
         {
             var orderId = Guid.NewGuid();
 
-            await endpoint.SendLocal(new PlaceOrder {OrderId = orderId, TotalValue = 900});
+            var sendOptions = new SendOptions();
+            sendOptions.SetHeader("MyShop.Audit", "Place Order");
+            await endpoint.Send(new PlaceOrder { OrderId = orderId, TotalValue = 900 }, sendOptions);
 
-            Thread.Sleep(1000);
             await endpoint.SendLocal(new CancelOrder {OrderId = orderId});
         }
 
@@ -74,7 +77,9 @@ namespace MyShop.Sales.Endpoint
         {
             var orderId = Guid.NewGuid();
 
-            return endpoint.SendLocal(new PlaceOrder {OrderId = orderId, TotalValue = totalValue});
+            var sendOptions = new SendOptions();
+            sendOptions.SetHeader("MyShop.Audit", "Place Order");
+            return endpoint.Send(new PlaceOrder {OrderId = orderId, TotalValue = totalValue}, sendOptions);
         }
     }
 }

@@ -33,14 +33,12 @@ namespace MyShop.Sales.Endpoint
 
         public async Task Timeout(BuyersRemorseTimeout state, IMessageHandlerContext context)
         {
-            var publishOptions = new PublishOptions();
-            publishOptions.SetHeader("MyShop.Audit", "Place Order");
             await context.Publish<IOrderPlaced>(
                 o =>
                 {
                     o.OrderId = Data.OrderId;
                     o.TotalValue = Data.TotalValue;
-                }, publishOptions);
+                });
 
             MarkAsComplete();
         }
